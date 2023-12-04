@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Send Action To Game</title>
+</head>
+<style>
+    /* CSS styles go here */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 0;
+    }
+
+    h1 {
+        color: #333;
+        text-align: center;
+    }
+
+    form {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .my-button {
+        background-color: #007bff;
+        /* Background color */
+        color: #fff;
+        /* Text color */
+        padding: 10px 20px;
+        /* Padding */
+        border: none;
+        /* Remove border */
+        border-radius: 5px;
+        /* Rounded corners */
+        cursor: pointer;
+        /* Cursor on hover */
+    }
+
+    .my-button:hover {
+        background-color: #0056b3;
+        /* Background color on hover */
+    }
+
+    label {
+        display: block;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+        width: 80%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    input[type="submit"] {
+        background-color: #007bff;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    input[type="submit"]:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+<body>
+    <h1>Send Action To Game</h1>
+
+    <form id="postForm">
+        <fieldset>
+            <legend>session (parent -> child) </legend>
+            
+            <label for="sessionId">session Id </label>
+            <input type="text" id="sessionId" name="sessionId">
+        </fieldset>
+        <fieldset>
+            <legend>Set Game timeout</legend>
+
+            <label for="minutes">Select minutes:</label>
+            <input type="number" id="minutes" name="minutes" min="1"  value="1">
+          
+            <button class="my-button" type="button" id="SetTimeOut">Set TimeOut</button>
+
+        </fieldset>
+        <fieldset>
+            <legend>Spawn Item</legend>
+
+            <label for="item">Select a Item:</label>
+            <select id="item" name="item">
+                <option value="chair" selected>chair</option>
+                <option value="ball">ball</option>
+            </select>
+            <label for="item">Select a quantity:</label>
+            <select id="quantity" name="quantity">
+                <option value=1 >1</option>
+                <option value=2 selected>2</option>
+                <option value=3>3</option>
+                <option value=4>4</option>
+                <option value=5>5</option>
+                <option value=6>6</option>
+
+            </select>
+            <button class="my-button" type="button" id="spawnItem">spawn item</button>
+
+        </fieldset>
+        <fieldset>
+            <legend>Remove Item</legend>
+            <label for="RemoveItem">Select a Item:</label>
+            <select id="RemoveItem" name="RemoveItem">
+                <option value="chair" selected>chair</option>
+                <option value="ball">ball</option>
+            </select>
+    
+            <button class="my-button" type="button" id="RemoveAction">Remove items</button>
+
+        </fieldset>
+        <fieldset>
+            <legend>Play Sound</legend>
+
+            <label for="sound">Select a sound:</label>
+            <select id="sound" name="sound">
+                <option value="collapse1" selected>collapse 1</option>
+                <option value="collapse2">collapse 2</option>
+                <option value="camera">camera</option>
+                <option value="vr">vr</option>
+                <option value="invalid">invalid action</option>
+                <option value="birds">birds</option>
+            </select>
+            <button class="my-button" type="button" id="PlaySound">Play Sound</button>
+
+        </fieldset>
+        <br><br>
+        <!-- Button 1 -->
+        <fieldset>
+            <legend>Drop Ball</legend>
+            <button class="my-button" type="button" id="DropBall">Drop Ball</button>
+        </fieldset>
+        <fieldset>
+            <legend>ConFetti</legend>
+            <button class="my-button" type="button" id="ConFetti">ConFetti</button>
+        </fieldset>
+        <!-- Button 2 -->
+    </form>
+
+    <script>
+        document.getElementById("SetTimeOut").addEventListener("click", function () {
+            const jsonObject = {};
+            jsonObject["action"] = "SetTimeOut";
+            jsonObject["session_id"] = document.getElementById("sessionId").value;
+          
+            jsonObject["minutes"] =   parseInt(document.getElementById("minutes").value, 10);
+            const requestBody = JSON.stringify(jsonObject);
+            sendJsonPostRequest(requestBody);
+
+        });
+        document.getElementById("RemoveAction").addEventListener("click", function () {
+            // Handle action for Button 1
+            // Your code here
+            const jsonObject = {};
+            jsonObject["action"] = "RemoveActor";
+            jsonObject["spawn_name"] = document.getElementById("RemoveItem").value;
+            jsonObject["session_id"] = document.getElementById("sessionId").value;
+            const requestBody = JSON.stringify(jsonObject);
+            sendJsonPostRequest(requestBody);
+
+        });
+        document.getElementById("DropBall").addEventListener("click", function () {
+            // Handle action for Button 1
+            // Your code here
+            const jsonObject = {};
+            jsonObject["action"] = "DropBall";
+            jsonObject["session_id"] = document.getElementById("sessionId").value;
+
+            const requestBody = JSON.stringify(jsonObject);
+            sendJsonPostRequest(requestBody);
+
+        });
+        document.getElementById("ConFetti").addEventListener("click", function () {
+            // Handle action for Button 1
+            // Your code here
+            const jsonObject = {};
+            jsonObject["action"] = "ConFetti";
+            jsonObject["session_id"] = document.getElementById("sessionId").value;
+
+            const requestBody = JSON.stringify(jsonObject);
+            sendJsonPostRequest(requestBody);
+
+        });
+
+        document.getElementById("PlaySound").addEventListener("click", function () {
+            // Handle action for Button 2
+            // Your code here
+            const jsonObject = {};
+            jsonObject["action"] = "PlaySound";
+            jsonObject["session_id"] = document.getElementById("sessionId").value;
+
+            jsonObject["sound"] = document.getElementById("sound").value;
+            const requestBody = JSON.stringify(jsonObject);
+            sendJsonPostRequest(requestBody);
+        });
+        document.getElementById("spawnItem").addEventListener("click", function () {
+            // Handle action for Button 2
+            // Your code here
+            const jsonObject = {};
+            jsonObject["action"] = "Spawn";
+            jsonObject["session_id"] = document.getElementById("sessionId").value;
+            jsonObject["spawn_name"] = document.getElementById("item").value;
+           
+            jsonObject["quantity"] =  parseInt(document.getElementById("quantity").value, 10);
+
+            const requestBody = JSON.stringify(jsonObject);
+            sendJsonPostRequest(requestBody);
+        });
+        document.getElementById("postForm").addEventListener("submit", function (event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            // Collect form data
+            const formData = new FormData(this);
+
+            // Convert form data to a JSON object
+            const jsonObject = {};
+            formData.forEach((value, key) => {
+                jsonObject[key] = value;
+            });
+
+            // Create the JSON body
+            const requestBody = JSON.stringify(jsonObject);
+
+            // Send the POST request using fetch
+            fetch("/post", {
+                method: "POST",
+                body: requestBody,
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json(); // Parse the JSON response
+                    } else {
+                        throw new Error("Request failed with status: " + response.status);
+                    }
+                })
+                .then(data => {
+                    // Handle the JSON response data
+                    console.log(data);
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        });
+
+        // create function to post request to server
+        function sendJsonPostRequest(requestBody) {
+            fetch("/action", {
+                method: "POST",
+                body: requestBody,
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json(); // Parse the JSON response
+                    } else {
+                        throw new Error("Request failed with status: " + response.status);
+                    }
+                }).then(data => {
+                    // Handle the JSON response data
+                    console.log(data);
+                }).catch(error => {
+                    console.error(error);
+                });
+        }
+    </script>
+</body>
+
+</html>
