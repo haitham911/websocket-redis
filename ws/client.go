@@ -1,11 +1,8 @@
-// Copyright 2013 The Gorilla WebSocket Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package ws
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -25,7 +22,9 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 512
+	//maxMessageSize = 512
+	child  = "child"
+	parent = "parent"
 )
 
 var (
@@ -51,6 +50,7 @@ type Client struct {
 	// Buffered channel of outbound messages.
 	send      chan []byte
 	SessionId string
+	UserType  string // parent or child
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -63,7 +63,7 @@ func (c *Client) readPump() {
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
-	c.conn.SetReadLimit(maxMessageSize)
+	//c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
@@ -75,7 +75,19 @@ func (c *Client) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.hub.broadcast <- message
+		log.Println("msg", string(message))
+		var data Data
+		err = json.Unmarshal(message, &data)
+		if err != nil {
+			log.Println("invalid msg", err)
+
+			continue
+		}
+		data.SessionId = c.SessionId
+		data.UserType = c.UserType
+		userMessage, _ := json.Marshal(data)
+		c.hub.RedisBroadcastChannel <- userMessage
+
 	}
 }
 
@@ -126,14 +138,20 @@ func (c *Client) writePump() {
 }
 
 // serveWs handles websocket requests from the peer.
-func ServeWs(hub *Hub, SessionId string, w http.ResponseWriter, r *http.Request) {
+func ServeWs(hub *Hub, SessionId string, UserType string, w http.ResponseWriter, r *http.Request) {
 	fmt.Println("ServeWs")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, SessionId: SessionId, send: make(chan []byte, 256)}
+	if UserType == child {
+		err := hub.CreateUser(SessionId)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	client := &Client{hub: hub, conn: conn, UserType: UserType, SessionId: SessionId, send: make(chan []byte, 256)}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in

@@ -1,9 +1,7 @@
-// websockets.go
 package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,10 +17,6 @@ import (
 
 var hub *ws.Hub
 var RedisClient *redis.Client
-
-const (
-	PlayerChannel = "Player-Channel"
-)
 
 func init() {
 	password := os.Getenv("REDIS_PASSWORD")
@@ -41,9 +35,9 @@ func init() {
 }
 
 func main() {
-	hub = ws.NewHub()
+	hub = ws.NewHub(RedisClient)
 	go hub.Run()
-	go ListenToPlayerChannelAndPublishToHub()
+	go hub.ListenToPlayerChannelAndPublishToHub()
 
 	router := gin.Default()
 	router.Use(CORSMiddleware())
@@ -55,6 +49,8 @@ func main() {
 	})
 	router.POST("/action", SendAction)
 	router.GET("/ws/:id", wsServe)
+	router.GET("parent/ws/:id", wsParentServe)
+	router.GET("users/:id", GetUsers)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -95,7 +91,27 @@ func main() {
 		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 }
+func GetUsers(c *gin.Context) {
+	SessionId := c.Param("id")
+	if SessionId == "" {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "id not found"})
+		log.Println("id not found")
+		return
 
+	}
+	ok, err := hub.CheckUserExists(SessionId)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		log.Println("error :" + err.Error())
+		return
+	}
+	if !ok {
+		c.IndentedJSON(http.StatusOK, gin.H{"message": "offline"})
+		return
+	}
+	c.IndentedJSON(http.StatusOK, gin.H{"message": "online"})
+
+}
 func wsServe(c *gin.Context) {
 	SessionId := c.Param("id")
 	if SessionId == "" {
@@ -104,7 +120,17 @@ func wsServe(c *gin.Context) {
 		return
 
 	}
-	ws.ServeWs(hub, SessionId, c.Writer, c.Request)
+	ws.ServeWs(hub, SessionId, "child", c.Writer, c.Request)
+}
+func wsParentServe(c *gin.Context) {
+	SessionId := c.Param("id")
+	if SessionId == "" {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "id not found"})
+		log.Println("id not found")
+		return
+
+	}
+	ws.ServeWs(hub, SessionId, "parent", c.Writer, c.Request)
 }
 func SendAction(c *gin.Context) {
 	var wsData ws.Data
@@ -221,36 +247,10 @@ func SendAction(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, wsData)
 }
 func PublishMessageToPlayerChannel(data ws.Data) error {
-	log.Println("error :" + data.Action)
-	msg, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-	if err := RedisClient.Publish(PlayerChannel, msg).Err(); err != nil {
-		return err
-	}
+	ws.SendMessageToGame(hub, data)
 	return nil
 }
 
-// ------------------------------------------------------------
-func ListenToPlayerChannelAndPublishToHub() {
-	subscriber := RedisClient.Subscribe(PlayerChannel)
-	defer subscriber.Close()
-
-	channel := subscriber.Channel()
-	for msg := range channel {
-		var data ws.Data
-		if err := json.Unmarshal([]byte(msg.Payload), &data); err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		fmt.Println("Received message from " + msg.Channel + " channel.")
-		fmt.Println(msg)
-		ws.SendMessageToGame(hub, data)
-
-	}
-}
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
