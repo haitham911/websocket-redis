@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	PlayerChannel = "Player-Channel"
+	PlayerChannel = "Players-Channel"
 	users         = "Player-users"
 )
 
