@@ -1,4 +1,4 @@
-var connection = new WebSocket('ws://localhost:3000/ws/test'); 
+var connection = new WebSocket('wss://signaling-server-6duwzdomia-uc.a.run.app/ws/7AA8DDDC486D5EF8E4A1429E1F816910'); 
 
 var loginInput = document.querySelector('#loginInput'); 
 var loginBtn = document.querySelector('#loginBtn'); 
@@ -108,7 +108,7 @@ function onLogin(success) {
     } else { 
         //Known ICE Servers
         var configuration = { 
-            "iceServers": [{ "urls": "stun:stun.1.google.com:19302" }] 
+            "iceServers": [{ "urls": "stun:stun.l.google.com:19302" }]
 	}; 
 
         peerConnection = new RTCPeerConnection(configuration);
